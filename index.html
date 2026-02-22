@@ -144,7 +144,18 @@ const contractAddress = "0xF477B708FfF47E4BcD2e78ADE253f856B6844d59";
 const abi = [{"inputs":[{"internalType":"uint256","name":"_maxVotes","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint8","name":"candidate","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"voteCount","type":"uint256"}],"name":"Voted","type":"event"},{"inputs":[],"name":"CANDIDATE_COUNT","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"candidateVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"getRemainingVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"getVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maxVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_newMax","type":"uint256"}],"name":"setMaxVotes","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"voters","outputs":[{"internalType":"uint256","name":"voteCount","type":"uint256"},{"internalType":"uint8","name":"lastVote","type":"uint8"}],"stateMutability":"view","type":"function"}];
     
 let provider, signer, contract, userAddress;
+let readProvider, readContract;
 
+async function loadResultsWithoutWallet() {
+    // RPC Sepolia miễn phí
+    readProvider = new ethers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia");
+
+    readContract = new ethers.Contract(contractAddress, abi, readProvider);
+
+    document.getElementById("a").innerText = (await readContract.getVotes(0)).toString();
+    document.getElementById("b").innerText = (await readContract.getVotes(1)).toString();
+    document.getElementById("c").innerText = (await readContract.getVotes(2)).toString();
+}
 // Connect MetaMask
 async function connectWallet() {
     if (!window.ethereum) {
@@ -215,7 +226,9 @@ function listenEvents() {
         updateRemaining();
     });
 }
+window.onload = loadResultsWithoutWallet;
 </script>
 </body>
 
 </html>
+
