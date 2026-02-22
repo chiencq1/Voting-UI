@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Voting DApp</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+<style>
+* {
+    box-sizing: border-box;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 25px 30px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #38bdf8;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #38bdf8;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #0ea5e9;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    margin-top: 10px;
+}
+
+#wallet {
+    font-size: 14px;
+    margin-top: 8px;
+    color: #a5f3fc;
+    word-break: break-all;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-box {
+    background: rgba(255,255,255,0.08);
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.remaining {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 18px;
+    color: #22c55e;
+}
+
+/* Responsive mobile */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+    h2 {
+        font-size: 20px;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h2>Blockchain Voting System</h2>
+
+<button id="connectBtn" onclick="connectWallet()">Connect MetaMask</button>
+<p id="wallet"></p>
+
+<select id="candidate">
+    <option value="0">Tử Du</option>
+    <option value="1">Điền Hủ Ninh</option>
+    <option value="2">Trịnh Bằng</option>
+    <option value="2">Điền Lôi</option>
+</select>
+
+<button onclick="vote()">Vote</button>
+
+<div class="remaining">
+Remaining Votes: <span id="remaining">0</span>
+</div>
+
+<h3>Live Results</h3>
+<div class="stats">
+    <div class="stat-box">Tử Du<br><span id="a">0</span></div>
+    <div class="stat-box">Điền Hủ Ninh<br><span id="b">0</span></div>
+    <div class="stat-box">Trịnh Bằng<br><span id="c">0</span></div>    
+    <div class="stat-box">Điền Lôi<br><span id="c">0</span></div>
+</div>
+
+</div>
+
+<script>
+// Contract address
+//const contractAddress = "0x702133e5B809196B0cf18ff082EB7C01dD482480";
+const contractAddress = "0xf2A02Cc6a285F8A5799A21A7Bb6B87a8469586d1";
+// ABI 
+//const abi = [{"inputs":[{"internalType":"uint256","name":"_maxVotes","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint8","name":"candidate","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"voteCount","type":"uint256"}],"name":"Voted","type":"event"},{"inputs":[],"name":"CANDIDATE_COUNT","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"candidateVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"getRemainingVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"getVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maxVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_newMax","type":"uint256"}],"name":"setMaxVotes","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"voters","outputs":[{"internalType":"uint256","name":"voteCount","type":"uint256"},{"internalType":"uint8","name":"lastVote","type":"uint8"}],"stateMutability":"view","type":"function"}];
+const abi = [{"inputs":[{"internalType":"uint256","name":"_maxVotes","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint8","name":"candidate","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"voteCount","type":"uint256"}],"name":"Voted","type":"event"},{"inputs":[],"name":"CANDIDATE_COUNT","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"candidateVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"getRemainingVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"getVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"maxVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_newMax","type":"uint256"}],"name":"setMaxVotes","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"_candidate","type":"uint8"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"voters","outputs":[{"internalType":"uint256","name":"voteCount","type":"uint256"},{"internalType":"uint8","name":"lastVote","type":"uint8"}],"stateMutability":"view","type":"function"}];
+
+let provider, signer, contract, userAddress;
+
+// Connect MetaMask
+async function connectWallet() {
+    if (!window.ethereum) {
+        alert("Please Install MetaMask");
+        return;
+    }
+
+    try {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
+
+        contract = new ethers.Contract(contractAddress, abi, signer);
+
+        document.getElementById("wallet").innerText = "Connected: " + userAddress;
+        document.getElementById("connectBtn").innerText = "Connected";
+
+        console.log("Connected contract:", contract);
+
+        updateRemaining();
+        updateResults();
+        listenEvents();
+
+    } catch (err) {
+        console.error("Connect error:", err);
+        alert("Unsuccessful Connection");
+    }
+}
+
+// Vote
+async function vote() {
+    if (!contract) {
+        alert("Please Connect to Wallet to Vote");
+        return;
+    }
+
+    try {
+        const c = document.getElementById("candidate").value;
+        const tx = await contract.vote(c);
+        await tx.wait();
+        alert("Vote success!");
+    } catch (err) {
+        console.error("Vote error:", err);
+        alert("The number of Vote has run out");
+    }
+}
+
+// Load results
+async function updateResults() {
+    document.getElementById("a").innerText = (await contract.getVotes(0)).toString();
+    document.getElementById("b").innerText = (await contract.getVotes(1)).toString();
+    document.getElementById("c").innerText = (await contract.getVotes(2)).toString();
+}
+
+// Remaining votes
+async function updateRemaining() {
+    const r = await contract.getRemainingVotes(userAddress);
+    document.getElementById("remaining").innerText = r;
+}
+
+// Event listener realtime
+function listenEvents() {
+    contract.on("Voted", (voter, candidate, count) => {
+        console.log("New vote:", voter, candidate, count);
+        updateResults();
+        updateRemaining();
+    });
+}
+</script>
+</body>
+</html>
